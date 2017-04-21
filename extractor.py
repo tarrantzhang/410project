@@ -11,26 +11,17 @@ def whatisthis(s):
         print "not a string"
 
 def extract_keywords(keyword_list, resource):
-    word_list_1 = get_word_list(resource,1)
-    word_list_2 = get_word_list(resource,2)
-    word_list_3 = get_word_list(resource,3)
+    word_list = get_word_list(resource,1) + get_word_list(resource,2) + get_word_list(resource,3)
     keywords = []
     for keyword in keyword_list:
-        if len(keyword.split(' ')) == 1:
-            if keyword in word_list_1:
-                keywords.append(keyword)
-        elif len(keyword.split(' ')) == 2:
-            if keyword in word_list_2:
-                keywords.append(keyword)
-        elif len(keyword.split(' ')) == 3:
-            if keyword in word_list_3:
-                keywords.append(keyword)
+        if keyword in word_list:
+            keywords.append(keyword)
     return keywords
 
 def get_word_list(text, ngram):
     doc = metapy.index.Document()
     doc.content(text)
-    tok = metapy.analyzers.ICUTokenizer()
+    tok = metapy.analyzers.ICUTokenizer(True)
     tok = metapy.analyzers.LowercaseFilter(tok)
     tok.set_content(doc.content())
     ana = metapy.analyzers.NGramWordAnalyzer(ngram, tok)
@@ -38,10 +29,23 @@ def get_word_list(text, ngram):
     l = []
     for s in result:
         if isinstance(s,tuple):
-            l.append(' '.join(s).encode('utf-8'))
+            w = ' '.join(s);
+            l.append(w.encode('utf-8'))
+            ## add possible mutant word to list if s contants punctuation, rectify ICUTokenizer
+            punc_list = ['+','#','/','\\','!','@','?','$','%','^','&']
+            for punc in punc_list:
+                if punc in w:
+                    w = rectify_punctuation(w,punc)
+            l.append(w.encode('utf-8'))
         else:
             l.append(s.encode('utf-8'))
     return l
+
+def rectify_punctuation(word, punc):
+    word = word.replace(" "+punc+" ", punc)
+    word = word.replace(" "+punc, punc)
+    word = word.replace(punc+" ", punc)
+    return word
 
 def process_keyword_list(keyword_path):
     l = []

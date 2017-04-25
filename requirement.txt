@@ -1,2 +1,4 @@
 metapy==0.2.1
+python-firebase==1.2
+requests==1.1.0
 textract==1.5.0

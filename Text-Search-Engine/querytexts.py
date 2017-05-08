@@ -24,11 +24,11 @@ from nltk.corpus import stopwords
 #res = {word: {filename: {pos1, pos2}, ...}, ...}
 
 config = {
-    "apiKey": "XXX",
-        "authDomain": "XXX",
-            "databaseURL": "XXX",
-"storageBucket": "XXX",
-    "serviceAccount": "XXX"
+    "apiKey": "AIzaSyDP2U8_jTBjt04U_Jt0rFA-FQx4spv0B0Q",
+        "authDomain": "assembo-cb212.firebaseapp.com",
+            "databaseURL": "https://assembo-cb212.firebaseio.com/",
+"storageBucket": "assembo-cb212.appspot.com",
+    "serviceAccount": "/Users/YuanShen1/Desktop/projects/Assembo/Unknown"
 }
 
 class Query:
@@ -81,6 +81,7 @@ class Query:
 			result += self.one_word_query(word)
 		return self.rankResults(list(set(result)), string)
 
+#1/(1.15-x)-1/1.15
 	def user_query(self):
 		score = 0
 		results = {}
@@ -88,9 +89,9 @@ class Query:
 		for keyword in self.query_weights.keys():
 			for pair in self.one_word_query(keyword):
 				if not pair[1] in results:
-					results[pair[1]] = pair[0] * self.query_weights[keyword]
+					results[pair[1]] = pair[0] * (1 / (1.15-self.query_weights[keyword]) - 1/1.15)
 				else:
-					results[pair[1]] = results[pair[1]] + pair[0] * self.query_weights[keyword]
+					results[pair[1]] = results[pair[1]] + pair[0] * (1 / (1.15-self.query_weights[keyword]) - 1/1.15)
 		final_result = []
 		for key, value in results.items():
 			final_result.append([key, value * float(self.ratings[key])])

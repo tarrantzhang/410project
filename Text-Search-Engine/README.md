@@ -1,1 +1,1 @@
-A search engine for textfiles. Made on a plane flight.
+Usage: python querytexts.py group_requirement_query

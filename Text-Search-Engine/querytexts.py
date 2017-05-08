@@ -24,11 +24,11 @@ from nltk.corpus import stopwords
 #res = {word: {filename: {pos1, pos2}, ...}, ...}
 
 config = {
-    "apiKey": "AIzaSyDP2U8_jTBjt04U_Jt0rFA-FQx4spv0B0Q",
-        "authDomain": "assembo-cb212.firebaseapp.com",
-            "databaseURL": "https://assembo-cb212.firebaseio.com/",
-"storageBucket": "assembo-cb212.appspot.com",
-    "serviceAccount": "/Users/YuanShen1/Desktop/projects/Assembo/Unknown"
+    "apiKey": "XXX",
+        "authDomain": "XXX",
+            "databaseURL": "XXX",
+"storageBucket": "XXX",
+    "serviceAccount": "XXX"
 }
 
 class Query:

@@ -34,17 +34,19 @@ config = {
 class Query:
 
 	def __init__(self):
+		firebase = pyrebase.initialize_app(config)
+		self.db = firebase.database()
 		users = self.get_resume_from_firebase()
 		self.filenames = users
+		self.ratings = self.get_in_app_rating_from_firebase()
 		self.index = buildindex.BuildIndex(users)
 		self.invertedIndex = self.index.totalIndex
 		self.regularIndex = self.index.regdex
+		self.query_weights = {}
+
 
 	def get_resume_from_firebase(self):
-		firebase = pyrebase.initialize_app(config)
-		db = firebase.database()
-		users = db.child("users").get()
-		all_users = db.child("users").get()
+		all_users = self.db.child("users").get()
 		users = {}
 		for user in all_users.each():
             #print(user.key()) # Morty
@@ -52,6 +54,16 @@ class Query:
 			if("intro" in user.val()):
 				users[user.key()] = user.val()['intro']
 		return users
+
+	def get_in_app_rating_from_firebase(self):
+		all_users = self.db.child("users").get()
+		ratings = {}
+		for user in all_users.each():
+            #print(user.key()) # Morty
+            #print(user.val()) # {name": "Mortimer 'Morty' Smith"}
+			if("rating" in user.val()):
+				ratings[user.key()] = user.val()['rating']
+		return ratings
     
 	def one_word_query(self, word):
 		pattern = re.compile('[\W_]+')
@@ -69,25 +81,23 @@ class Query:
 			result += self.one_word_query(word)
 		return self.rankResults(list(set(result)), string)
 
-	#inputs = 'query string', {word: {filename: [pos1, pos2, ...], ...}, ...}
-	#inter = {filename: [pos1, pos2]}
-	def phrase_query(self, string):
-		pattern = re.compile('[\W_]+')
-		string = pattern.sub(' ',string)
-		listOfLists, result = [],[]
-		for word in string.split():
-			listOfLists.append(self.one_word_query(word))
-		setted = set(listOfLists[0]).intersection(*listOfLists)
-		for filename in setted:
-			temp = []
-			for word in [PorterStemmer().stem(word).lower() for word in string.split()]:
-				temp.append(self.invertedIndex[word][filename][:])
-			for i in range(len(temp)):
-				for ind in range(len(temp[i])):
-					temp[i][ind] -= i
-			if set(temp[0]).intersection(*temp):
-				result.append(filename)
-		return self.rankResults(result, string, False)
+	def user_query(self):
+		score = 0
+		results = {}
+            #tfidf
+		for keyword in self.query_weights.keys():
+			for pair in self.one_word_query(keyword):
+				if not pair[1] in results:
+					results[pair[1]] = pair[0] * self.query_weights[keyword]
+				else:
+					results[pair[1]] = results[pair[1]] + pair[0] * self.query_weights[keyword]
+		final_result = []
+		for key, value in results.items():
+			final_result.append([key, value * float(self.ratings[key])])
+		final_result.sort(key=lambda x: x[1])
+		final_result.reverse()
+		for pair in final_result:
+			print(pair)
 
 	def make_vectors(self, documents):
 		vecs = {}
@@ -147,16 +157,23 @@ class Query:
         #print(results)
 		results.sort(key=lambda x: x[0])
 		results.reverse()
-		pp = pprint.PrettyPrinter(indent=4)
+        #pp = pprint.PrettyPrinter(indent=4)
 		semi_results = [x for x in results if x[1] != 0]
-		if verbose:
-			pp.pprint(semi_results)
-		results = [x[1] for x in results]
+        #if verbose:
+        #pp.pprint(semi_results)
+        #results = [x[1] for x in results]
 		return results
 
+	def input_parser(self, file):
+		with open(file) as f:
+			for line in f.readlines():
+				pair = line.strip().split(",")
+				word = PorterStemmer().stem(pair[0]).lower()
+				self.query_weights[word] = float(pair[1])
 
 if len(sys.argv) != 2:
     print('Usage: python querytexts.py group_requirement_query')
 else:
     q = Query()
-    q.phrase_query(sys.argv[1])
+    q.input_parser(sys.argv[1])
+    q.user_query()

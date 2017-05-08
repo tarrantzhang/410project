@@ -1,0 +1,4 @@
+mobile,1.0
+networking,0.5
+java,0.1
+python,0.5 
